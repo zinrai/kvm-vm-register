@@ -38,6 +38,11 @@ func copyImageWithDD(src, dst string) error {
 	return cmd.Run()
 }
 
+func checkVMExists(name string) bool {
+	cmd := exec.Command("sudo", "virsh", "dominfo", name)
+	return cmd.Run() == nil
+}
+
 func main() {
 	imagePath := flag.String("image", "", "Path to the VM image")
 	vmName := flag.String("name", "", "Name of the new VM")
@@ -66,6 +71,17 @@ func main() {
 	}
 
 	newDiskPath := filepath.Join("/var/lib/libvirt/images", *vmName+".qcow2")
+
+	// Check if the image file already exists
+	if _, err := os.Stat(newDiskPath); err == nil {
+		log.Fatalf("Image file already exists at %s. Please choose a different VM name or remove the existing image.", newDiskPath)
+	}
+
+	// Check if VM with the same name already exists
+	if checkVMExists(*vmName) {
+		log.Fatalf("A VM with the name '%s' already exists. Please choose a different name.", *vmName)
+	}
+
 	fmt.Printf("Copying image file to %s...\n", newDiskPath)
 	if err := copyImageWithDD(absImagePath, newDiskPath); err != nil {
 		log.Fatalf("Failed to copy image file: %v", err)
