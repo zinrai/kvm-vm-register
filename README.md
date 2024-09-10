@@ -23,7 +23,7 @@ The following commands must be available in the system PATH:
 
 - `virt-install`
 - `virsh`
-- `dd`
+- `qemu-img`
 - `sudo`
 
 ## Installation

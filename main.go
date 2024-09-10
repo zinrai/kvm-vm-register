@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 )
 
 func checkCommand(cmd string) bool {
@@ -15,7 +16,7 @@ func checkCommand(cmd string) bool {
 }
 
 func checkRequiredCommands() error {
-	requiredCommands := []string{"sudo", "virt-install", "virsh", "dd"}
+	requiredCommands := []string{"sudo", "virt-install", "virsh", "qemu-img"}
 	missingCommands := []string{}
 
 	for _, cmd := range requiredCommands {
@@ -31,11 +32,20 @@ func checkRequiredCommands() error {
 	return nil
 }
 
-func copyImageWithDD(src, dst string) error {
-	cmd := exec.Command("sudo", "dd", fmt.Sprintf("if=%s", src), fmt.Sprintf("of=%s", dst), "bs=4M", "status=progress")
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	return cmd.Run()
+func createIndependentImage(src, dst string, newSize int) error {
+	// Convert and resize in one step
+	args := []string{"qemu-img", "convert", "-O", "qcow2"}
+	if newSize > 0 {
+		args = append(args, "-o", fmt.Sprintf("size=%dG", newSize))
+	}
+	args = append(args, src, dst)
+
+	cmd := exec.Command("sudo", args...)
+	if output, err := cmd.CombinedOutput(); err != nil {
+		return fmt.Errorf("failed to create independent image: %v, output: %s", err, output)
+	}
+
+	return nil
 }
 
 func checkVMExists(name string) bool {
@@ -49,6 +59,7 @@ func main() {
 	memory := flag.Int("memory", 1024, "Memory size in MB")
 	vcpus := flag.Int("vcpus", 1, "Number of virtual CPUs")
 	network := flag.String("network", "network=default", "Network configuration for virt-install")
+	diskSize := flag.Int("disk-size", 0, "New disk size in GB (0 to keep original size)")
 
 	flag.Parse()
 
@@ -82,17 +93,17 @@ func main() {
 		log.Fatalf("A VM with the name '%s' already exists. Please choose a different name.", *vmName)
 	}
 
-	fmt.Printf("Copying image file to %s...\n", newDiskPath)
-	if err := copyImageWithDD(absImagePath, newDiskPath); err != nil {
-		log.Fatalf("Failed to copy image file: %v", err)
+	fmt.Printf("Creating independent image file at %s...\n", newDiskPath)
+	if err := createIndependentImage(absImagePath, newDiskPath, *diskSize); err != nil {
+		log.Fatalf("Failed to create independent image file: %v", err)
 	}
-	fmt.Println("Image file copied successfully.")
+	fmt.Println("Independent image file created successfully.")
 
 	virtInstallArgs := []string{
 		"virt-install",
 		"--name", *vmName,
-		"--memory", fmt.Sprintf("%d", *memory),
-		"--vcpus", fmt.Sprintf("%d", *vcpus),
+		"--memory", strconv.Itoa(*memory),
+		"--vcpus", strconv.Itoa(*vcpus),
 		"--disk", newDiskPath,
 		"--import",
 		"--os-variant", "generic",
