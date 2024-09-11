@@ -16,7 +16,7 @@ func checkCommand(cmd string) bool {
 }
 
 func checkRequiredCommands() error {
-	requiredCommands := []string{"sudo", "virt-install", "virsh", "qemu-img"}
+	requiredCommands := []string{"sudo", "virt-install", "virsh", "qemu-img", "virt-customize"}
 	missingCommands := []string{}
 
 	for _, cmd := range requiredCommands {
@@ -33,7 +33,6 @@ func checkRequiredCommands() error {
 }
 
 func createIndependentImage(src, dst string, newSize int) error {
-	// Convert and resize in one step
 	args := []string{"qemu-img", "convert", "-O", "qcow2"}
 	if newSize > 0 {
 		args = append(args, "-o", fmt.Sprintf("size=%dG", newSize))
@@ -51,6 +50,14 @@ func createIndependentImage(src, dst string, newSize int) error {
 func checkVMExists(name string) bool {
 	cmd := exec.Command("sudo", "virsh", "dominfo", name)
 	return cmd.Run() == nil
+}
+
+func setVMHostname(imagePath, hostname string) error {
+	cmd := exec.Command("sudo", "virt-customize", "-a", imagePath, "--hostname", hostname)
+	if output, err := cmd.CombinedOutput(); err != nil {
+		return fmt.Errorf("failed to set VM hostname: %v, output: %s", err, output)
+	}
+	return nil
 }
 
 func main() {
@@ -98,6 +105,12 @@ func main() {
 		log.Fatalf("Failed to create independent image file: %v", err)
 	}
 	fmt.Println("Independent image file created successfully.")
+
+	fmt.Printf("Setting VM hostname to %s...\n", *vmName)
+	if err := setVMHostname(newDiskPath, *vmName); err != nil {
+		log.Fatalf("Failed to set VM hostname: %v", err)
+	}
+	fmt.Println("VM hostname set successfully.")
 
 	virtInstallArgs := []string{
 		"virt-install",
