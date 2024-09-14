@@ -61,8 +61,13 @@ func setVMHostname(imagePath, hostname string) error {
 }
 
 func main() {
+	flag.Usage = func() {
+		fmt.Fprintf(os.Stderr, "Usage: %s [options] vm_name\n", os.Args[0])
+		fmt.Fprintf(os.Stderr, "\nOptions:\n")
+		flag.PrintDefaults()
+	}
+
 	imagePath := flag.String("image", "", "Path to the VM image")
-	vmName := flag.String("name", "", "Name of the new VM")
 	memory := flag.Int("memory", 1024, "Memory size in MB")
 	vcpus := flag.Int("vcpus", 1, "Number of virtual CPUs")
 	network := flag.String("network", "network=default", "Network configuration for virt-install")
@@ -70,11 +75,14 @@ func main() {
 
 	flag.Parse()
 
-	if *imagePath == "" || *vmName == "" {
-		fmt.Println("Error: Image path and VM name are required")
-		flag.PrintDefaults()
+	args := flag.Args()
+	if len(args) != 1 || *imagePath == "" {
+		fmt.Println("Error: VM name and image path are required")
+		flag.Usage()
 		os.Exit(1)
 	}
+
+	vmName := args[0]
 
 	if err := checkRequiredCommands(); err != nil {
 		log.Fatalf("Error: %v\nPlease install the missing commands and try again.", err)
@@ -88,7 +96,7 @@ func main() {
 		log.Fatalf("Image file does not exist: %s", absImagePath)
 	}
 
-	newDiskPath := filepath.Join("/var/lib/libvirt/images", *vmName+".qcow2")
+	newDiskPath := filepath.Join("/var/lib/libvirt/images", vmName+".qcow2")
 
 	// Check if the image file already exists
 	if _, err := os.Stat(newDiskPath); err == nil {
@@ -96,8 +104,8 @@ func main() {
 	}
 
 	// Check if VM with the same name already exists
-	if checkVMExists(*vmName) {
-		log.Fatalf("A VM with the name '%s' already exists. Please choose a different name.", *vmName)
+	if checkVMExists(vmName) {
+		log.Fatalf("A VM with the name '%s' already exists. Please choose a different name.", vmName)
 	}
 
 	fmt.Printf("Creating independent image file at %s...\n", newDiskPath)
@@ -106,15 +114,15 @@ func main() {
 	}
 	fmt.Println("Independent image file created successfully.")
 
-	fmt.Printf("Setting VM hostname to %s...\n", *vmName)
-	if err := setVMHostname(newDiskPath, *vmName); err != nil {
+	fmt.Printf("Setting VM hostname to %s...\n", vmName)
+	if err := setVMHostname(newDiskPath, vmName); err != nil {
 		log.Fatalf("Failed to set VM hostname: %v", err)
 	}
 	fmt.Println("VM hostname set successfully.")
 
 	virtInstallArgs := []string{
 		"virt-install",
-		"--name", *vmName,
+		"--name", vmName,
 		"--memory", strconv.Itoa(*memory),
 		"--vcpus", strconv.Itoa(*vcpus),
 		"--disk", newDiskPath,
@@ -148,5 +156,5 @@ func main() {
 		log.Fatalf("Failed to define VM: %v\nCommand: %s\nOutput: %s", err, defineCmd.String(), output)
 	}
 
-	fmt.Printf("VM '%s' registered successfully\n", *vmName)
+	fmt.Printf("VM '%s' registered successfully\n", vmName)
 }

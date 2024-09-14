@@ -9,7 +9,7 @@ Use [debvirt-image-kit](https://github.com/zinrai/debvirt-image-kit) to create v
 - Copies the specified VM image to `/var/lib/libvirt/images`
 - Generates XML configuration for the new VM
 - Registers the VM with libvirt without starting it
-- Customizable VM parameters (name, memory, vCPUs, network)
+- Customizable VM parameters (memory, vCPUs, network)
 - Creates an independent qcow2 image, allowing for disk size expansion
 - Automatically sets the VM's hostname to match the VM name
 
@@ -18,7 +18,7 @@ Use [debvirt-image-kit](https://github.com/zinrai/debvirt-image-kit) to create v
 - This tool requires sudo privileges to copy the image file and interact with libvirt.
 - The tool does not start the VM after registration. You can start it manually using `virsh start your-vm-name`.
 - Make sure you have enough disk space in `/var/lib/libvirt/images` before running the tool.
-- The VM's hostname is automatically set to the name specified with the `-name` option.
+- The VM's hostname is automatically set to the VM name specified as an argument.
 
 ## Requirements
 
@@ -43,13 +43,13 @@ $ go build
 Run the tool with the following command:
 
 ```
-$ ./kvm-vm-register -image /path/to/your/image.qcow2 -name your-vm-name [options]
+$ ./kvm-vm-register [options] -image /path/to/your/image.qcow2 vm_name
 ```
 
 ### Example
 
 ```
-$ ./kvm-vm-register -image ../debvirt-image-kit/output/debian-12.7.0-amd64 -name bookworm64 -memory 2048 -vcpus 2 -disk-size 20
+$ ./kvm-vm-register -image ../debvirt-image-kit/output/debian-12.7.0-amd64 -memory 2048 -vcpus 2 -disk-size 20 bookworm64
 ```
 
 This command will:
@@ -62,4 +62,3 @@ This command will:
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](https://opensource.org/license/mit) for details.
-## License
