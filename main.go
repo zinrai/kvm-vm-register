@@ -32,12 +32,8 @@ func checkRequiredCommands() error {
 	return nil
 }
 
-func createIndependentImage(src, dst string, newSize int) error {
-	args := []string{"qemu-img", "convert", "-O", "qcow2"}
-	if newSize > 0 {
-		args = append(args, "-o", fmt.Sprintf("size=%dG", newSize))
-	}
-	args = append(args, src, dst)
+func createIndependentImage(src, dst string) error {
+	args := []string{"qemu-img", "convert", "-O", "qcow2", src, dst}
 
 	cmd := exec.Command("sudo", args...)
 	if output, err := cmd.CombinedOutput(); err != nil {
@@ -71,7 +67,6 @@ func main() {
 	memory := flag.Int("memory", 1024, "Memory size in MB")
 	vcpus := flag.Int("vcpus", 1, "Number of virtual CPUs")
 	network := flag.String("network", "network=default", "Network configuration for virt-install")
-	diskSize := flag.Int("disk-size", 0, "New disk size in GB (0 to keep original size)")
 
 	flag.Parse()
 
@@ -109,7 +104,7 @@ func main() {
 	}
 
 	fmt.Printf("Creating independent image file at %s...\n", newDiskPath)
-	if err := createIndependentImage(absImagePath, newDiskPath, *diskSize); err != nil {
+	if err := createIndependentImage(absImagePath, newDiskPath); err != nil {
 		log.Fatalf("Failed to create independent image file: %v", err)
 	}
 	fmt.Println("Independent image file created successfully.")

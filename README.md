@@ -10,7 +10,7 @@ Use [debvirt-image-kit](https://github.com/zinrai/debvirt-image-kit) to create v
 - Generates XML configuration for the new VM
 - Registers the VM with libvirt without starting it
 - Customizable VM parameters (memory, vCPUs, network)
-- Creates an independent qcow2 image, allowing for disk size expansion
+- Creates an independent qcow2 image
 - Automatically sets the VM's hostname to match the VM name
 
 ## Notes
@@ -46,18 +46,24 @@ Run the tool with the following command:
 $ ./kvm-vm-register [options] -image /path/to/your/image.qcow2 vm_name
 ```
 
+### Options
+
+- `-image`: Path to the VM image (required)
+- `-memory`: Memory size in MB (default: 1024)
+- `-vcpus`: Number of virtual CPUs (default: 1)
+- `-network`: Network configuration for virt-install (default: "network=default")
+
 ### Example
 
 ```
-$ ./kvm-vm-register -image ../debvirt-image-kit/output/debian-12.7.0-amd64 -memory 2048 -vcpus 2 -disk-size 20 bookworm64
+$ ./kvm-vm-register -image ../debvirt-image-kit/output/debian-12.7.0-amd64 -memory 2048 -vcpus 2 bookworm64
 ```
 
 This command will:
 1. Copy the Debian image to `/var/lib/libvirt/images/bookworm64.qcow2`
-2. Expand the disk size to 20GB
-3. Set the VM's hostname to "bookworm64"
-4. Generate an XML configuration for a VM named "bookworm64" with 2048MB of RAM and 2 vCPUs
-5. Register the VM without starting it
+2. Set the VM's hostname to "bookworm64"
+3. Generate an XML configuration for a VM named "bookworm64" with 2048MB of RAM and 2 vCPUs
+4. Register the VM without starting it
 
 ## License
 
