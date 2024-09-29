@@ -67,7 +67,9 @@ func main() {
 	memory := flag.Int("memory", 1024, "Memory size in MB")
 	vcpus := flag.Int("vcpus", 1, "Number of virtual CPUs")
 	network := flag.String("network", "network=default", "Network configuration for virt-install")
-	noHostnameChange := flag.Bool("no-hostname-change", false, "Skip hostname change (for FreeBSD or other unsupported OS)")
+	noHostnameChange := flag.Bool("no-hostname-change", false, "Skip hostname change (for FreeBSD or other unsupported OSes)")
+	virtioDisk := flag.Bool("virtio-disk", false, "Use virtio for disk device")
+	virtioNetwork := flag.Bool("virtio-network", false, "Use virtio for network device")
 
 	flag.Parse()
 
@@ -120,15 +122,30 @@ func main() {
 		fmt.Println("Skipping hostname change as requested.")
 	}
 
+	diskOption := newDiskPath
+	networkOption := *network
+
+	if *virtioDisk {
+		diskOption = fmt.Sprintf("%s,bus=virtio", newDiskPath)
+	}
+
+	if *virtioNetwork {
+		if networkOption == "network=default" {
+			networkOption = "network=default,model=virtio"
+		} else {
+			networkOption += ",model=virtio"
+		}
+	}
+
 	virtInstallArgs := []string{
 		"virt-install",
 		"--name", vmName,
 		"--memory", strconv.Itoa(*memory),
 		"--vcpus", strconv.Itoa(*vcpus),
-		"--disk", newDiskPath,
+		"--disk", diskOption,
 		"--import",
 		"--os-variant", "generic",
-		"--network", *network,
+		"--network", networkOption,
 		"--print-xml",
 	}
 
