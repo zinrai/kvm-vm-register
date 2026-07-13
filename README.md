@@ -57,6 +57,7 @@ $ ./kvm-vm-register [options] -image /path/to/your/image.qcow2 vm_name
 - `-no-hostname-change`: Skip hostname change (for FreeBSD or other unsupported OSes)
 - `-virtio-disk`: Use virtio for disk device
 - `-virtio-network`: Use virtio for network device
+- `-version`: Print version information and exit
 
 ### Examples
 

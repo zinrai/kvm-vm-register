@@ -10,6 +10,12 @@ import (
 	"strconv"
 )
 
+var (
+	version = "dev"
+	commit  = "none"
+	date    = "unknown"
+)
+
 func checkCommand(cmd string) bool {
 	_, err := exec.LookPath(cmd)
 	return err == nil
@@ -70,8 +76,14 @@ func main() {
 	noHostnameChange := flag.Bool("no-hostname-change", false, "Skip hostname change (for FreeBSD or other unsupported OSes)")
 	virtioDisk := flag.Bool("virtio-disk", false, "Use virtio for disk device")
 	virtioNetwork := flag.Bool("virtio-network", false, "Use virtio for network device")
+	showVersion := flag.Bool("version", false, "Print version information and exit")
 
 	flag.Parse()
+
+	if *showVersion {
+		fmt.Printf("kvm-vm-register %s (commit: %s, built: %s)\n", version, commit, date)
+		os.Exit(0)
+	}
 
 	args := flag.Args()
 	if len(args) != 1 || *imagePath == "" {
