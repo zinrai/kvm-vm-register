@@ -32,14 +32,6 @@ The following commands must be available in the system PATH:
 - `virt-customize`
 - `sudo`
 
-## Installation
-
-Build the tool:
-
-```
-$ go build
-```
-
 ## Usage
 
 Run the tool with the following command:
